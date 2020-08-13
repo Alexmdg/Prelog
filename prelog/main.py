@@ -11,19 +11,19 @@ logging.addLevelName(8, "SPC_DBG")
 logging.SPC_DBG = logging.DEBUG - 2
 logging.addLevelName(12, "CMN_DBG")
 logging.CMN_DBG = logging.DEBUG + 2
-logging.addLevelName(18, "CMN_INFO")
+logging.addLevelName(18, "SPC_INFO")
 logging.SPC_INFO = logging.INFO - 2
-logging.addLevelName(22, "SPC_INFO")
+logging.addLevelName(22, "CMN_INFO")
 logging.CMN_INFO = logging.INFO + 2
 
-class MyFormater(logging.Formatter):
-    def __init__(self, fmt = MAIN_CLASSIC_FORMAT):
+class MyFormatter(logging.Formatter):
+    def __init__(self, fmt=MAIN_CLASSIC_FORMAT):
         super().__init__(fmt)
 
 class MyLogger(logging.Logger):
     def __init__(self, name, file=False, fmt=MAIN_CLASSIC_FORMAT):
         super().__init__(name)
-        formatter = MyFormater(fmt)
+        formatter = MyFormatter(fmt)
         handler = logging.StreamHandler()
         handler.setFormatter(formatter)
         self.addHandler(handler)
@@ -65,7 +65,7 @@ class CheckLog:
         self.dataProc = MyLogger(__name__, fmt=Fore.CYAN + DATAPROC_CLASSIC_FORMAT + Fore.RESET)
         self.display = MyLogger(__name__, fmt=Fore.YELLOW + DISPLAY_CLASSIC_FORMAT + Fore.RESET)
         self.init = "Init"
-        self.end = "Done"
+        self.end = "Completed"
 
     @contextmanager
     def bugCheck(self, logger, func_name, init='Init', end="Completed"):
