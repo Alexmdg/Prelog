@@ -4,6 +4,11 @@ from contextlib import contextmanager
 import wrapt
 
 
+MAIN_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Main Logger: %(message)s'
+DATAIO_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
+DATAPROC_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data Proc. Logger: %(message)s'
+DISPLAY_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Display Logger: %(message)s'
+
 MAIN_LIGHT_FORMAT = '%(name)s: Main Logger: %(message)s'
 DATAIO_LIGHT_FORMAT = '%(name)s: Data I/O Logger: %(message)s'
 DATAPROC_LIGHT_FORMAT = '%(name)s: Data Proc. Logger: %(message)s'
@@ -17,11 +22,6 @@ logging.addLevelName(18, "CMN_INFO")
 logging.SPC_INFO = logging.INFO - 2
 logging.addLevelName(22, "SPC_INFO")
 logging.CMN_INFO = logging.INFO + 2
-
-MAIN_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Main Logger: %(message)s'
-DATAIO_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
-DATAPROC_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data Proc. Logger: %(message)s'
-DISPLAY_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Display Logger: %(message)s'
 
 class MyFormater(logging.Formatter):
     def __init__(self, fmt = MAIN_CLASSIC_FORMAT):
@@ -73,10 +73,6 @@ class CheckLog:
         self.dataIO = MyLogger(__name__, fmt=Fore.MAGENTA + DATAIO_CLASSIC_FORMAT + Fore.RESET)
         self.dataProc = MyLogger(__name__, fmt=Fore.CYAN + DATAPROC_CLASSIC_FORMAT + Fore.RESET)
         self.display = MyLogger(__name__, fmt=Fore.YELLOW + DISPLAY_CLASSIC_FORMAT + Fore.RESET)
-<<<<<<< HEAD
-        self.init = "Init"
-        self.end = "Done"
-=======
         self.init = "Init: True"
         self.done = "Completed: True"
         self.error = "Completed: False"
@@ -84,7 +80,6 @@ class CheckLog:
 
     def create_logger(self, name, color, format=MAIN_CLASSIC_FORMAT):
         setattr(CheckLog, name, MyLogger(__name__, fmt=color + format + Fore.RESET))
->>>>>>> wrapt
 
     @contextmanager
     @empty_logs
@@ -106,45 +101,10 @@ class CheckLog:
             yield func
             logger.cmn_dbg(f'{done}')
         except Exception as e:
-<<<<<<< HEAD
             logger.CDF(e)
         finally:
             logger.log(12, end)
             items.pop()
-
-
-if __name__ == '__main__':
-    # setLevel(logging.SPC_DBG)
-    def quick_func(x, items):
-        indice = f'indice : '
-        for item in items:
-            if item == x:
-                indice = f'indice : {items.index(item)}, items: {items}'
-        return indice
-
-
-    items = [n for n in range(0, 10)]
-    x = 6
-    check = CheckLog()
-
-
-    with check.bugCheck(check.main, 'quick_func', 'New style'):
-        check.dataProc.SDS(quick_func(x, items))
-        check.dataProc.CDS(quick_func(x, items))
-        check.dataProc.SDF(quick_func(x, items))
-        check.dataProc.CDF(quick_func(x, items))
-
-    try:
-        check.dataProc.SDS(quick_func(x, items))
-    except Exception as e:
-        check.dataProc.SDF(f'Got this: {e}')
-    check.dataProc.CDS(quick_func(x, items))
-    check.dataProc.CDF(quick_func(x, items))
-    print(len(items))
-=======
-            logger.exception(f'{error}: {e}')
-        finally:
-            logger.cmn_dbg(f'{end}')
 
 
 if __name__ == '__main__':
@@ -175,4 +135,4 @@ if __name__ == '__main__':
             log.dataIO.cmn_dbg(f'{str(result)} = {type(result)}')
 
     log.main.info(f'FINISHED')
->>>>>>> wrapt
+
