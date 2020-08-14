@@ -1,7 +1,7 @@
 import logging
 from colorama import Fore, Back
 from contextlib import contextmanager
-from functools import wraps
+import wrapt
 
 MAIN_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Main Logger: %(message)s'
 DATAIO_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
@@ -63,6 +63,13 @@ class MyLogger(logging.Logger):
     def CDS(self, message):
         self.cmn_dbg(Fore.GREEN + message + Fore.RESET)
 
+@wrapt.decorator
+def empty_logs(wrapped, instance, args, kwargs):
+    init = "Init: True" if not 'init' in kwargs else kwargs['init']
+    done = "Completed: True" if not 'done' in kwargs else kwargs['done']
+    error = "Completed: False" if not 'error' in kwargs else kwargs['error']
+    end = "Closed: True" if not 'end' in kwargs else kwargs['end']
+    return wrapped(*args, **kwargs, init=init, done=done, error=error, end=end)
 
 class CheckLog:
     def __init__(self):
@@ -78,19 +85,8 @@ class CheckLog:
     def create_logger(self, name, color, format=MAIN_CLASSIC_FORMAT):
         setattr(CheckLog, name, MyLogger(__name__, fmt=color + format + Fore.RESET))
 
-    @wraps
-    def auto_set_msg(self, func):
-        @wraps
-        def wrapper(*args, **kwargs):
-            init = "Init: True" if kwargs['init'] is None else kwargs['init']
-            done = "Completed: True" if kwargs['done'] is None else kwargs['done']
-            error = "Completed: False" if kwargs['error'] is None else kwargs['error']
-            end = "Closed: True" if kwargs['end'] is None else kwargs['end']
-            return func(*args, init=init, done=done, error=error, end=end)
-        return wrapper
-
-    @auto_set_msg
     @contextmanager
+    @empty_logs
     def bugCheck(self, logger, func_name="Current Function", init=None, done=None, error=None, end=None):
         try:
             logger.CDS(f'{func_name}: {init}')
@@ -101,8 +97,8 @@ class CheckLog:
         finally:
             logger.cmn_dbg(f'{func_name}: {end}')
 
-    @auto_set_msg()
     @contextmanager
+    @empty_logs
     def resultCheck(self, logger, func, init=None, done=None, error=None, end=None):
         try:
             logger.cmn_dbg(f'{init}')
@@ -112,7 +108,6 @@ class CheckLog:
             logger.exception(f'{error}: {e}')
         finally:
             logger.cmn_dbg(f'{end}')
-
 
 
 if __name__ == '__main__':
