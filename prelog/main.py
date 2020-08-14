@@ -47,8 +47,13 @@ class MyLogger(logging.Logger):
         if self.isEnabledFor(logging.SPC_DBG):
             self._log(logging.SPC_DBG, message, args, **kwargs)
 
+    def cmn_dbg(self, message, *args, **kwargs):
+        if self.isEnabledFor(logging.CMN_DBG):
+            self._log(logging.CMN_DBG, message, args, **kwargs)
+
+
     def SDS(self, message):
-        self.spc_dbg(Back.GREEN + message + Back.RESET)
+        self.spc_dbg(Back.GREEN + Fore.LIGHTWHITE_EX + message + Back.RESET + Fore.RESET)
 
     def SDF(self, message):
         self.spc_dbg(Back.RED + Fore.BLACK + message + Back.RESET + Fore.RESET)
@@ -57,7 +62,7 @@ class MyLogger(logging.Logger):
         self.debug(Fore.RED + message + Fore.RESET)
 
     def CDS(self, message):
-        self.spc_dbg(Fore.GREEN + message + Fore.RESET)
+        self.cmn_dbg(Fore.GREEN + message + Fore.RESET)
 
 @wrapt.decorator
 def empty_logs(wrapped, instance, args, kwargs):
