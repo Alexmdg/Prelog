@@ -95,19 +95,19 @@ class CheckLog:
         except Exception as e:
             logger.CDF(f'{error}: {e}')
         finally:
-            logger.cmn_dbg(f'{func_name}: {end}')
+            logger.CDS(f'{func_name}: {end}')
 
-    @contextmanager
-    @empty_logs
-    def resultCheck(self, logger, func, init=None, done=None, error=None, end=None):
-        try:
-            logger.cmn_dbg(f'{init}')
-            yield func
-            logger.cmn_dbg(f'{done}')
-        except Exception as e:
-            logger.exception(f'{error}: {e}')
-        finally:
-            logger.cmn_dbg(f'{end}')
+    # @contextmanager
+    # @empty_logs
+    # def resultCheck(self, logger, func, init=None, done=None, error=None, end=None):
+    #     try:
+    #         logger.cmn_dbg(f'{init}')
+    #         yield func
+    #         logger.cmn_dbg(f'{done}')
+    #     except Exception as e:
+    #         logger.exception(f'{error}: {e}')
+    #     finally:
+    #         logger.cmn_dbg(f'{end}')
 
 
 if __name__ == '__main__':
@@ -116,33 +116,42 @@ if __name__ == '__main__':
     log.display.setLevel(logging.SPC_DBG)
 
     def find(x, items):
-        # indice = f'No match found for {x}'
         for item in items:
             if item == x:
                 indice = items.index(item)
         return items.pop(indice)
 
 
-    # x = 6
-    # items = [n for n in range(0, 10)]
-    #
-    # with log.bugCheck(log.display, func_name='find'):
-    #     log.main.SDS(find(x, items))
-    #     log.main.SDS(find(x, items))
-    #     find(x, items)
-
     items = [n for n in range(0, 5)]
-    for x in range(0, 10):
-        with log.resultCheck(log.main, find(x, items)) as result:
+    with log.bugCheck(log.main, 'find(x, items)'):
+        for x in range(0, 6):
+            result = find(x, items)
             log.dataIO.cmn_dbg(f'{str(result)} = {type(result)}')
 
     log.main.SDS(f'FINISHED')
+
     items = [n for n in range(0, 5)]
-    for x in range(0, 10):
+    for x in range(0, 6):
+        with log.bugCheck(log.main, 'find(x, items)'):
+            result = find(x, items)
+            log.dataIO.cmn_dbg(f'{str(result)} = {type(result)}')
+
+    log.main.SDS(f'FINISHED')
+
+    # items = [n for n in range(0, 5)]
+    # for x in range(0, 6):
+    #     with log.resultCheck(log.main, find(x, items)) as result:
+    #         log.dataIO.cmn_dbg(f'{str(result)} = {type(result)}')
+    #
+    # log.main.SDS(f'FINISHED')
+
+    items = [n for n in range(0, 5)]
+    for x in range(0, 5):
         result = find(x, items)
         log.main.success(f'{str(result)} = {type(result)}')
 
     log.main.SDS(f'FINISHED')
+
     items = [n for n in range(0, 5)]
-    for x in range(0, 10):
+    for x in range(0, 5):
         log.main.success(f'{str(find(x, items))} = {type(find(x, items))}')
