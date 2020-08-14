@@ -1,11 +1,17 @@
 import logging
 from colorama import Fore, Back
 from contextlib import contextmanager
+from functools import wraps
 
 MAIN_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Main Logger: %(message)s'
 DATAIO_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
 DATAPROC_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data Proc. Logger: %(message)s'
 DISPLAY_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Display Logger: %(message)s'
+
+MAIN_LIGHT_FORMAT = '%(name)s: Main Logger: %(message)s'
+DATAIO_LIGHT_FORMAT = '%(name)s: Data I/O Logger: %(message)s'
+DATAPROC_LIGHT_FORMAT = '%(name)s: Data Proc. Logger: %(message)s'
+DISPLAY_LIGHT_FORMAT = '%(name)s: Display Logger: %(message)s'
 
 logging.addLevelName(8, "SPC_DBG")
 logging.SPC_DBG = logging.DEBUG - 2
@@ -64,18 +70,49 @@ class CheckLog:
         self.dataIO = MyLogger(__name__, fmt=Fore.MAGENTA + DATAIO_CLASSIC_FORMAT + Fore.RESET)
         self.dataProc = MyLogger(__name__, fmt=Fore.CYAN + DATAPROC_CLASSIC_FORMAT + Fore.RESET)
         self.display = MyLogger(__name__, fmt=Fore.YELLOW + DISPLAY_CLASSIC_FORMAT + Fore.RESET)
-        self.init = "Init"
-        self.end = "Completed"
+        self.init = "Init: True"
+        self.done = "Completed: True"
+        self.error = "Completed: False"
+        self.end = "Closed: True"
 
+    def create_logger(self, name, color, format=MAIN_CLASSIC_FORMAT):
+        setattr(CheckLog, name, MyLogger(__name__, fmt=color + format + Fore.RESET))
+
+    @wraps
+    def auto_set_msg(self, func):
+        @wraps
+        def wrapper(*args, **kwargs):
+            init = "Init: True" if kwargs['init'] is None else kwargs['init']
+            done = "Completed: True" if kwargs['done'] is None else kwargs['done']
+            error = "Completed: False" if kwargs['error'] is None else kwargs['error']
+            end = "Closed: True" if kwargs['end'] is None else kwargs['end']
+            return func(*args, init=init, done=done, error=error, end=end)
+        return wrapper
+
+    @auto_set_msg
     @contextmanager
-    def bugCheck(self, logger, func_name, init='Init', end="Completed"):
+    def bugCheck(self, logger, func_name="Current Function", init=None, done=None, error=None, end=None):
         try:
-            logger.spc_dbg(f'{func_name}: {init}')
+            logger.CDS(f'{func_name}: {init}')
             yield
+            logger.CDS(f'{func_name}: {done}')
         except Exception as e:
-            logger.CDF(f'Wild error appears: {e}')
+            logger.CDF(f'{error}: {e}')
         finally:
-            logger.log(12, end)
+            logger.cmn_dbg(f'{func_name}: {end}')
+
+    @auto_set_msg()
+    @contextmanager
+    def resultCheck(self, logger, func, init=None, done=None, error=None, end=None):
+        try:
+            logger.cmn_dbg(f'{init}')
+            yield func
+            logger.cmn_dbg(f'{done}')
+        except Exception as e:
+            logger.exception(f'{error}: {e}')
+        finally:
+            logger.cmn_dbg(f'{end}')
+
 
 
 if __name__ == '__main__':
@@ -84,25 +121,25 @@ if __name__ == '__main__':
     log.display.setLevel(logging.SPC_DBG)
 
     def find(x, items):
-        indice = f'No match found for {x}'
+        # indice = f'No match found for {x}'
         for item in items:
             if item == x:
-                indice = f'Found {x} at rank {items.index(item)}'
-        return indice
-
-    x = 6
-    items = [n for n in range(0, 10)]
-
-    log.main.cmn_dbg(find(x, items))
-    log.main.CDS(find(x, items))
-    log.main.SDS(find(x, items))
-    log.main.debug(find(x, items))
+                # indice = f'Found {x} at rank {items.index(item)}'
+                return items.pop(items.index(item))
 
 
-    find(x, items)
+    # x = 6
+    # items = [n for n in range(0, 10)]
+    #
+    # with log.bugCheck(log.display, func_name='find'):
+    #     log.main.SDS(find(x, items))
+    #     log.main.SDS(find(x, items))
+    #     find(x, items)
 
-    with log.bugCheck(log.display, 'find'):
-        log.main.SDS(find(x, items))
-        items.remove(6)
-        log.main.SDS(find(x, items))
-        find(x, items)
+    items = [n for n in range(0, 5)]
+
+    for x in range(0, 10):
+        with log.resultCheck(log.main, find(x, items)) as result:
+            log.dataIO.cmn_dbg(f'{str(result)} = {type(result)}')
+
+    log.main.info(f'FINISHED')
