@@ -3,7 +3,6 @@ from colorama import Fore, Back
 from contextlib import contextmanager
 import wrapt
 
-
 MAIN_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Main Logger: %(message)s'
 DATAIO_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
 DATAPROC_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data Proc. Logger: %(message)s'
@@ -18,19 +17,19 @@ logging.addLevelName(8, "SPC_DBG")
 logging.SPC_DBG = logging.DEBUG - 2
 logging.addLevelName(12, "CMN_DBG")
 logging.CMN_DBG = logging.DEBUG + 2
-logging.addLevelName(18, "CMN_INFO")
+logging.addLevelName(18, "SPC_INFO")
 logging.SPC_INFO = logging.INFO - 2
-logging.addLevelName(22, "SPC_INFO")
+logging.addLevelName(22, "CMN_INFO")
 logging.CMN_INFO = logging.INFO + 2
 
-class MyFormater(logging.Formatter):
-    def __init__(self, fmt = MAIN_CLASSIC_FORMAT):
+class MyFormatter(logging.Formatter):
+    def __init__(self, fmt=MAIN_CLASSIC_FORMAT):
         super().__init__(fmt)
 
 class MyLogger(logging.Logger):
     def __init__(self, name, file=False, fmt=MAIN_CLASSIC_FORMAT):
         super().__init__(name)
-        formatter = MyFormater(fmt)
+        formatter = MyFormatter(fmt)
         handler = logging.StreamHandler()
         handler.setFormatter(formatter)
         self.addHandler(handler)
@@ -106,10 +105,9 @@ class CheckLog:
             yield func
             logger.cmn_dbg(f'{done}')
         except Exception as e:
-            logger.CDF(e)
+            logger.exception(f'{error}: {e}')
         finally:
-            logger.log(12, end)
-            items.pop()
+            logger.cmn_dbg(f'{end}')
 
 
 if __name__ == '__main__':
@@ -121,8 +119,8 @@ if __name__ == '__main__':
         # indice = f'No match found for {x}'
         for item in items:
             if item == x:
-                # indice = f'Found {x} at rank {items.index(item)}'
-                return items.pop(items.index(item))
+                indice = items.index(item)
+        return items.pop(indice)
 
 
     # x = 6
@@ -134,10 +132,17 @@ if __name__ == '__main__':
     #     find(x, items)
 
     items = [n for n in range(0, 5)]
-
     for x in range(0, 10):
         with log.resultCheck(log.main, find(x, items)) as result:
             log.dataIO.cmn_dbg(f'{str(result)} = {type(result)}')
 
-    log.main.info(f'FINISHED')
+    log.main.SDS(f'FINISHED')
+    items = [n for n in range(0, 5)]
+    for x in range(0, 10):
+        result = find(x, items)
+        log.main.success(f'{str(result)} = {type(result)}')
 
+    log.main.SDS(f'FINISHED')
+    items = [n for n in range(0, 5)]
+    for x in range(0, 10):
+        log.main.success(f'{str(find(x, items))} = {type(find(x, items))}')
