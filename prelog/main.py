@@ -2,28 +2,29 @@ import logging
 from colorama import Fore, Back
 from contextlib import contextmanager
 
-MAIN_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Main Logger: %(message)s'
-DATAIO_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
-DATAPROC_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data Proc. Logger: %(message)s'
-DISPLAY_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Display Logger: %(message)s'
 
 logging.addLevelName(8, "SPC_DBG")
 logging.SPC_DBG = logging.DEBUG - 2
 logging.addLevelName(12, "CMN_DBG")
 logging.CMN_DBG = logging.DEBUG + 2
-logging.addLevelName(18, "SPC_INFO")
+logging.addLevelName(18, "CMN_INFO")
 logging.SPC_INFO = logging.INFO - 2
-logging.addLevelName(22, "CMN_INFO")
+logging.addLevelName(22, "SPC_INFO")
 logging.CMN_INFO = logging.INFO + 2
 
-class MyFormatter(logging.Formatter):
-    def __init__(self, fmt=MAIN_CLASSIC_FORMAT):
+MAIN_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Main Logger: %(message)s'
+DATAIO_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
+DATAPROC_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data Proc. Logger: %(message)s'
+DISPLAY_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Display Logger: %(message)s'
+
+class MyFormater(logging.Formatter):
+    def __init__(self, fmt = MAIN_CLASSIC_FORMAT):
         super().__init__(fmt)
 
 class MyLogger(logging.Logger):
     def __init__(self, name, file=False, fmt=MAIN_CLASSIC_FORMAT):
         super().__init__(name)
-        formatter = MyFormatter(fmt)
+        formatter = MyFormater(fmt)
         handler = logging.StreamHandler()
         handler.setFormatter(formatter)
         self.addHandler(handler)
@@ -40,13 +41,8 @@ class MyLogger(logging.Logger):
         if self.isEnabledFor(logging.SPC_DBG):
             self._log(logging.SPC_DBG, message, args, **kwargs)
 
-    def cmn_dbg(self, message, *args, **kwargs):
-        if self.isEnabledFor(logging.CMN_DBG):
-            self._log(logging.CMN_DBG, message, args, **kwargs)
-
-
     def SDS(self, message):
-        self.spc_dbg(Back.GREEN + Fore.LIGHTWHITE_EX + message + Back.RESET + Fore.RESET)
+        self.spc_dbg(Back.GREEN + message + Back.RESET)
 
     def SDF(self, message):
         self.spc_dbg(Back.RED + Fore.BLACK + message + Back.RESET + Fore.RESET)
@@ -55,7 +51,7 @@ class MyLogger(logging.Logger):
         self.debug(Fore.RED + message + Fore.RESET)
 
     def CDS(self, message):
-        self.cmn_dbg(Fore.GREEN + message + Fore.RESET)
+        self.spc_dbg(Fore.GREEN + message + Fore.RESET)
 
 
 class CheckLog:
@@ -65,7 +61,7 @@ class CheckLog:
         self.dataProc = MyLogger(__name__, fmt=Fore.CYAN + DATAPROC_CLASSIC_FORMAT + Fore.RESET)
         self.display = MyLogger(__name__, fmt=Fore.YELLOW + DISPLAY_CLASSIC_FORMAT + Fore.RESET)
         self.init = "Init"
-        self.end = "Completed"
+        self.end = "Done"
 
     @contextmanager
     def bugCheck(self, logger, func_name, init='Init', end="Completed"):
@@ -73,36 +69,37 @@ class CheckLog:
             logger.spc_dbg(f'{func_name}: {init}')
             yield
         except Exception as e:
-            logger.CDF(f'Wild error appears: {e}')
+            logger.CDF(e)
         finally:
             logger.log(12, end)
+            items.pop()
 
 
 if __name__ == '__main__':
-    log = CheckLog()
-    log.main.setLevel(logging.SPC_DBG)
-    log.display.setLevel(logging.SPC_DBG)
-
-    def find(x, items):
-        indice = f'No match found for {x}'
+    # setLevel(logging.SPC_DBG)
+    def quick_func(x, items):
+        indice = f'indice : '
         for item in items:
             if item == x:
-                indice = f'Found {x} at rank {items.index(item)}'
+                indice = f'indice : {items.index(item)}, items: {items}'
         return indice
 
-    x = 6
+
     items = [n for n in range(0, 10)]
-
-    log.main.cmn_dbg(find(x, items))
-    log.main.CDS(find(x, items))
-    log.main.SDS(find(x, items))
-    log.main.debug(find(x, items))
+    x = 6
+    check = CheckLog()
 
 
-    find(x, items)
+    with check.bugCheck(check.main, 'quick_func', 'New style'):
+        check.dataProc.SDS(quick_func(x, items))
+        check.dataProc.CDS(quick_func(x, items))
+        check.dataProc.SDF(quick_func(x, items))
+        check.dataProc.CDF(quick_func(x, items))
 
-    with log.bugCheck(log.display, 'find'):
-        log.main.SDS(find(x, items))
-        items.remove(6)
-        log.main.SDS(find(x, items))
-        find(x, items)
+    try:
+        check.dataProc.SDS(quick_func(x, items))
+    except Exception as e:
+        check.dataProc.SDF(f'Got this: {e}')
+    check.dataProc.CDS(quick_func(x, items))
+    check.dataProc.CDF(quick_func(x, items))
+    print(len(items))
