@@ -3,21 +3,6 @@ from colorama import Fore, Back
 from contextlib import contextmanager
 import wrapt
 
-MAIN_CLASSIC_FORMAT = '%(asctime)s:%(levelname)s:%(name)s: Main Logger: %(message)s'
-DATAIO_CLASSIC_FORMAT = '%(asctime)s:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
-DATAPROC_CLASSIC_FORMAT = '%(asctime)s:%(levelname)s:%(name)s: Data Proc. Logger: %(message)s'
-DISPLAY_CLASSIC_FORMAT = '%(asctime)s:%(levelname)s:%(name)s: Display Logger: %(message)s'
-
-MAIN_LIGHT_FORMAT = '%Main Logger: %(message)s'
-DATAIO_LIGHT_FORMAT = '%Data I/O Logger: %(message)s'
-DATAPROC_LIGHT_FORMAT = '%Data Proc. Logger: %(message)s'
-DISPLAY_LIGHT_FORMAT = '%Display Logger: %(message)s'
-
-MAIN_LOCATE_FORMAT = 'Main Logger(%(module)s / %(lineno)d): %(message)s'
-DATAIO_LOCATE_FORMAT = 'Data I/O Logger(%(module)s / %(lineno)d): %(message)s'
-DATAPROC_LOCATE_FORMAT = 'Data Proc. Logger(%(module)s / %(lineno)d): %(message)s'
-DISPLAY_LOCATE_FORMAT = 'Display Logger(%(module)s / %(lineno)d): %(message)s'
-
 logging.addLevelName(8, "SPC_DBG")
 logging.SPC_DBG = logging.DEBUG - 2
 logging.addLevelName(12, "CMN_DBG")
@@ -34,12 +19,18 @@ LEVELS = {"1": logging.SPC_DBG,
           "5": logging.INFO,
           "6": logging.CMN_INFO}
 
+FORMATS = {
+    'classic': ': %(asctime)s:%(levelname)s:%(name)s:%(message)s',
+    'light': ': %(message)s',
+    'locate': '(%(module)s / %(lineno)d): %(message)s'
+}
+
 class MyFormatter(logging.Formatter):
-    def __init__(self, fmt=MAIN_CLASSIC_FORMAT):
+    def __init__(self, fmt=FORMATS['classic']):
         super().__init__(fmt)
 
 class MyLogger(logging.Logger):
-    def __init__(self, name, file=False, fmt=MAIN_CLASSIC_FORMAT):
+    def __init__(self, name, file=False, fmt=FORMATS['classic']):
         super().__init__(name)
         formatter = MyFormatter(fmt)
         handler = logging.StreamHandler()
@@ -62,6 +53,13 @@ class MyLogger(logging.Logger):
         if self.isEnabledFor(logging.CMN_DBG):
             self._log(logging.CMN_DBG, message, args, **kwargs)
 
+    def spc_info(self, message, *args, **kwargs):
+        if self.isEnabledFor(logging.SPC_INFO):
+            self._log(logging.SPC_INFO, message, args, **kwargs)
+
+    def cmn_info(self, message, *args, **kwargs):
+        if self.isEnabledFor(logging.CMN_INFO):
+            self._log(logging.CMN_INFO, message, args, **kwargs)
 
     def SDS(self, message):
         self.spc_dbg(Back.GREEN + Fore.LIGHTWHITE_EX + message + Back.RESET + Fore.RESET)
@@ -75,6 +73,18 @@ class MyLogger(logging.Logger):
     def CDS(self, message):
         self.cmn_dbg(Fore.GREEN + message + Fore.RESET)
 
+    def SIS(self, message):
+        self.spc_dbg(Back.GREEN + Fore.LIGHTWHITE_EX + message + Back.RESET + Fore.RESET)
+
+    def SIF(self, message):
+        self.spc_dbg(Back.RED + Fore.BLACK + message + Back.RESET + Fore.RESET)
+
+    def CIF(self, message):
+        self.debug(Fore.RED + message + Fore.RESET)
+
+    def CIS(self, message):
+        self.cmn_dbg(Fore.GREEN + message + Fore.RESET)
+
 @wrapt.decorator
 def empty_logs(wrapped, instance, args, kwargs):
     init = "Init: True" if not 'init' in kwargs else kwargs['init']
@@ -84,24 +94,24 @@ def empty_logs(wrapped, instance, args, kwargs):
     return wrapped(*args, **kwargs, init=init, done=done, error=error, end=end)
 
 class CheckLog:
-    def __init__(self):
-        self.main = MyLogger(__name__, fmt=Fore.WHITE + MAIN_CLASSIC_FORMAT + Fore.RESET)
-        self.dataIO = MyLogger(__name__, fmt=Fore.MAGENTA + DATAIO_CLASSIC_FORMAT + Fore.RESET)
-        self.dataProc = MyLogger(__name__, fmt=Fore.CYAN + DATAPROC_CLASSIC_FORMAT + Fore.RESET)
-        self.display = MyLogger(__name__, fmt=Fore.YELLOW + DISPLAY_CLASSIC_FORMAT + Fore.RESET)
+    def __init__(self, fmt = FORMATS['classic']):
+        self.main = MyLogger(__name__, fmt=Fore.WHITE + 'Main Logger' + fmt + Fore.RESET)
+        self.dataIO = MyLogger(__name__, fmt=Fore.MAGENTA + 'Data I/O Logger' + fmt + Fore.RESET)
+        self.dataProc = MyLogger(__name__, fmt=Fore.CYAN + 'Data Proc. Logger' + fmt + Fore.RESET)
+        self.display = MyLogger(__name__, fmt=Fore.YELLOW + 'Display Logger' + fmt + Fore.RESET)
         self.init = "Init: True"
         self.done = "Completed: True"
         self.error = "Completed: False"
         self.end = "Closed: True"
 
-    def create_logger(self, name, color, format=MAIN_CLASSIC_FORMAT):
-        setattr(CheckLog, name, MyLogger(__name__, fmt=color + format + Fore.RESET))
+    def create_logger(self, id, color, fmt=FORMATS['classic']):
+        setattr(CheckLog, id, MyLogger(__name__, fmt=color + id + fmt + Fore.RESET))
 
     @contextmanager
     @empty_logs
     def bugCheck(self, logger, func_name="Current Function", init=None, done=None, error=None, end=None):
         try:
-            logger.CDS(f'{func_name}: {init}')
+            logger.spc_dbg(f'{func_name}: {init}')
             yield
             logger.CDS(f'{func_name}: {done}')
         except Exception as e:
@@ -121,9 +131,8 @@ class CheckLog:
     #     finally:
     #         logger.cmn_dbg(f'{end}')
 
-
 if __name__ == '__main__':
-    log = CheckLog()
+    log = CheckLog(fmt=FORMATS['locate'])
     log.main.setLevel(logging.SPC_DBG)
     log.display.setLevel(logging.SPC_DBG)
 
