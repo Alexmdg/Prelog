@@ -3,15 +3,20 @@ from colorama import Fore, Back
 from contextlib import contextmanager
 import wrapt
 
-MAIN_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Main Logger: %(message)s'
-DATAIO_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
-DATAPROC_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Data Proc. Logger: %(message)s'
-DISPLAY_CLASSIC_FORMAT = '%(created)f:%(levelname)s:%(name)s: Display Logger: %(message)s'
+MAIN_CLASSIC_FORMAT = '%(asctime)s:%(levelname)s:%(name)s: Main Logger: %(message)s'
+DATAIO_CLASSIC_FORMAT = '%(asctime)s:%(levelname)s:%(name)s: Data I/O Logger: %(message)s'
+DATAPROC_CLASSIC_FORMAT = '%(asctime)s:%(levelname)s:%(name)s: Data Proc. Logger: %(message)s'
+DISPLAY_CLASSIC_FORMAT = '%(asctime)s:%(levelname)s:%(name)s: Display Logger: %(message)s'
 
-MAIN_LIGHT_FORMAT = '%(name)s: Main Logger: %(message)s'
-DATAIO_LIGHT_FORMAT = '%(name)s: Data I/O Logger: %(message)s'
-DATAPROC_LIGHT_FORMAT = '%(name)s: Data Proc. Logger: %(message)s'
-DISPLAY_LIGHT_FORMAT = '%(name)s: Display Logger: %(message)s'
+MAIN_LIGHT_FORMAT = '%Main Logger: %(message)s'
+DATAIO_LIGHT_FORMAT = '%Data I/O Logger: %(message)s'
+DATAPROC_LIGHT_FORMAT = '%Data Proc. Logger: %(message)s'
+DISPLAY_LIGHT_FORMAT = '%Display Logger: %(message)s'
+
+MAIN_LOCATE_FORMAT = 'Main Logger(%(module)s / %(lineno)d): %(message)s'
+DATAIO_LOCATE_FORMAT = 'Data I/O Logger(%(module)s / %(lineno)d): %(message)s'
+DATAPROC_LOCATE_FORMAT = 'Data Proc. Logger(%(module)s / %(lineno)d): %(message)s'
+DISPLAY_LOCATE_FORMAT = 'Display Logger(%(module)s / %(lineno)d): %(message)s'
 
 logging.addLevelName(8, "SPC_DBG")
 logging.SPC_DBG = logging.DEBUG - 2
@@ -21,6 +26,13 @@ logging.addLevelName(18, "SPC_INFO")
 logging.SPC_INFO = logging.INFO - 2
 logging.addLevelName(22, "CMN_INFO")
 logging.CMN_INFO = logging.INFO + 2
+
+LEVELS = {"1": logging.SPC_DBG,
+          "2": logging.DEBUG,
+          "3": logging.CMN_DBG,
+          "4": logging.SPC_INFO,
+          "5": logging.INFO,
+          "6": logging.CMN_INFO}
 
 class MyFormatter(logging.Formatter):
     def __init__(self, fmt=MAIN_CLASSIC_FORMAT):
@@ -119,7 +131,7 @@ if __name__ == '__main__':
         for item in items:
             if item == x:
                 indice = items.index(item)
-        return items.pop(indice)
+                return items.pop(indice)
 
 
     items = [n for n in range(0, 5)]
@@ -155,3 +167,7 @@ if __name__ == '__main__':
     items = [n for n in range(0, 5)]
     for x in range(0, 5):
         log.main.success(f'{str(find(x, items))} = {type(find(x, items))}')
+
+    from prelog.exemple import hello
+
+    hello('world')

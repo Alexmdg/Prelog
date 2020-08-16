@@ -1,5 +1,7 @@
 setup.py
 prelog/__init__.py
+prelog/exemple.py
+prelog/main.py
 prelog.egg-info/PKG-INFO
 prelog.egg-info/SOURCES.txt
 prelog.egg-info/dependency_links.txt
