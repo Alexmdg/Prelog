@@ -2,6 +2,7 @@ import logging
 from colorama import Fore, Back
 from contextlib import contextmanager
 import wrapt
+import inspect
 
 logging.addLevelName(8, "SPC_DBG")
 logging.SPC_DBG = logging.DEBUG - 2
@@ -94,7 +95,8 @@ def empty_logs(wrapped, instance, args, kwargs):
     return wrapped(*args, **kwargs, init=init, done=done, error=error, end=end)
 
 class CheckLog:
-    def __init__(self, fmt = FORMATS['classic']):
+    def __init__(self, fmt=FORMATS['classic']):
+        self.LOC = "f'{inspect.getouterframes(inspect.currentframe())[-1][-2]}'"
         self.main = MyLogger(__name__, fmt=Fore.WHITE + 'Main Logger' + fmt + Fore.RESET)
         self.dataIO = MyLogger(__name__, fmt=Fore.MAGENTA + 'Data I/O Logger' + fmt + Fore.RESET)
         self.dataProc = MyLogger(__name__, fmt=Fore.CYAN + 'Data Proc. Logger' + fmt + Fore.RESET)
@@ -109,74 +111,76 @@ class CheckLog:
 
     @contextmanager
     @empty_logs
-    def bugCheck(self, logger, func_name="Current Function", init=None, done=None, error=None, end=None):
+    def bugCheck(self, logger, func_name=None, init=None, done=None, error=None, end=None):
+        func_name = eval(self.LOC) if func_name is None else func_name
         try:
             logger.spc_dbg(f'{func_name}: {init}')
-            yield
+            yield func_name
             logger.CDS(f'{func_name}: {done}')
         except Exception as e:
             logger.CDF(f'{error}: {e}')
         finally:
             logger.CDS(f'{func_name}: {end}')
 
-    # @contextmanager
-    # @empty_logs
-    # def resultCheck(self, logger, func, init=None, done=None, error=None, end=None):
-    #     try:
-    #         logger.cmn_dbg(f'{init}')
-    #         yield func
-    #         logger.cmn_dbg(f'{done}')
-    #     except Exception as e:
-    #         logger.exception(f'{error}: {e}')
-    #     finally:
-    #         logger.cmn_dbg(f'{end}')
 
 if __name__ == '__main__':
-    log = CheckLog(fmt=FORMATS['locate'])
-    log.main.setLevel(logging.SPC_DBG)
-    log.display.setLevel(logging.SPC_DBG)
+
+    class Logger(CheckLog):
+        def __init__(self):
+            super().__init__(fmt=FORMATS['locate'])
+            self.main.setLevel((logging.SPC_DBG))
+            self.display.setLevel(logging.SPC_DBG)
+            self.create_logger('client', Fore.CYAN, fmt=FORMATS['locate'])
+
+
+    log = Logger()
 
     def find(x, items):
-        for item in items:
-            if item == x:
-                indice = items.index(item)
-                return items.pop(indice)
-
+        with log.bugCheck(log.dataProc):
+            for item in items:
+                if item == x:
+                    indice = items.index(item)
+                    log.dataIO.cmn_dbg(f'{str(item)} = {type(item)}')
+            return items.pop(indice)
 
     items = [n for n in range(0, 5)]
-    with log.bugCheck(log.main, 'find(x, items)'):
+    with log.bugCheck(log.client):
         for x in range(0, 6):
             result = find(x, items)
-            log.dataIO.cmn_dbg(f'{str(result)} = {type(result)}')
-
     log.main.SDS(f'FINISHED')
 
     items = [n for n in range(0, 5)]
     for x in range(0, 6):
-        with log.bugCheck(log.main, 'find(x, items)'):
-            result = find(x, items)
-            log.dataIO.cmn_dbg(f'{str(result)} = {type(result)}')
-
+        find(x, items)
     log.main.SDS(f'FINISHED')
-
-    # items = [n for n in range(0, 5)]
-    # for x in range(0, 6):
-    #     with log.resultCheck(log.main, find(x, items)) as result:
-    #         log.dataIO.cmn_dbg(f'{str(result)} = {type(result)}')
-    #
-    # log.main.SDS(f'FINISHED')
-
-    items = [n for n in range(0, 5)]
-    for x in range(0, 5):
-        result = find(x, items)
-        log.main.success(f'{str(result)} = {type(result)}')
-
-    log.main.SDS(f'FINISHED')
-
-    items = [n for n in range(0, 5)]
-    for x in range(0, 5):
-        log.main.success(f'{str(find(x, items))} = {type(find(x, items))}')
 
     from prelog.exemple import hello
-
     hello('world')
+
+    class Finder(CheckLog):
+        def __init__(self):
+            super().__init__(fmt=FORMATS['locate'])
+            self.main.setLevel(logging.SPC_DBG)
+            self.display.setLevel(logging.SPC_DBG)
+
+        def find(self, x, items):
+            with self.bugCheck(self.main):
+                for item in items:
+                    if item == x:
+                        indice = items.index(item)
+                        F.dataIO.cmn_dbg(f'{str(item)} = {type(item)}')
+                return items.pop(indice)
+
+
+    F= Finder()
+
+    items = [n for n in range(0, 5)]
+    with F.bugCheck(F.main):
+        for x in range(0, 6):
+            result = F.find(x, items)
+    F.main.SDS(f'FINISHED')
+
+    items = [n for n in range(0, 5)]
+    for x in range(0, 6):
+        F.find(x, items)
+    F.main.SDS(f'FINISHED')
