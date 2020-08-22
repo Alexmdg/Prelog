@@ -5,6 +5,7 @@ import wrapt
 import inspect
 import time
 
+##          Logging Levels              ##
 logging.addLevelName(8, "SPC_DBG")
 logging.SPC_DBG = logging.DEBUG - 2
 logging.addLevelName(12, "CMN_DBG")
@@ -21,16 +22,21 @@ LEVELS = {"1": logging.SPC_DBG,
           "5": logging.INFO,
           "6": logging.CMN_INFO}
 
+
+##          Formats         ##
 FORMATS = {
     'classic': ': %(asctime)s:%(levelname)s:%(name)s:%(message)s',
     'light': ': %(message)s',
     'locate': '(%(module)s / %(lineno)d): %(message)s'
 }
 
+
+##          Formatter used in Logger class          ##
 class MyFormatter(logging.Formatter):
     def __init__(self, fmt=FORMATS['classic']):
         super().__init__(fmt)
 
+##          Logger used in CheckLog class           ##
 class MyLogger(logging.Logger):
     def __init__(self, name, file=False, fmt=FORMATS['classic']):
         super().__init__(name)
@@ -87,6 +93,7 @@ class MyLogger(logging.Logger):
     def CIS(self, message):
         self.cmn_dbg(Fore.GREEN + message + Fore.RESET)
 
+##          Decorator used to allow no arguments to be passed for several methods in CheckLog class         ##
 @wrapt.decorator
 def empty_logs(wrapped, instance, args, kwargs):
     init = "Init: True" if not 'init' in kwargs else kwargs['init']
@@ -95,6 +102,7 @@ def empty_logs(wrapped, instance, args, kwargs):
     end = "Closed: True" if not 'end' in kwargs else kwargs['end']
     return wrapped(*args, **kwargs, init=init, done=done, error=error, end=end)
 
+##          Timer decorator to use directly in your code         ##
 @wrapt.decorator
 def timer(wrapped, instance, args, kwargs):
     a = time.time()
@@ -114,9 +122,11 @@ class CheckLog:
         self.error = "Completed: False"
         self.end = "Closed: True"
 
+    ##          Create a new logger that will be used with "self.'id'"          ##
     def create_logger(self, id, color, fmt=FORMATS['classic']):
         setattr(CheckLog, id, MyLogger(__name__, fmt=color + id + fmt + Fore.RESET))
 
+    ##          A context manager at logging level 'common debug'           ##
     @contextmanager
     @empty_logs
     def cbugCheck(self, logger, func_name=None, init=None, done=None, error=None, end=None):
@@ -130,6 +140,7 @@ class CheckLog:
         finally:
             logger.cmn_dbg(Fore.GREEN + f'{func_name}: {end}' + Fore.RESET)
 
+    ##          A context manager at logging level 'specific debug'           ##
     @contextmanager
     @empty_logs
     def sbugCheck(self, logger, func_name=None, init=None, done=None, error=None, end=None):
@@ -143,6 +154,7 @@ class CheckLog:
         finally:
             logger.spc_dbg(Fore.BLUE + f'{func_name}: {end}' + Fore.RESET)
 
+    ##          A timercontext manager          ##
     @contextmanager
     def timeCheck(self, func, *args, **kwargs):
         try:
@@ -210,7 +222,6 @@ if __name__ == '__main__':
     F = Finder()
     # F.main.setLevel(logging.DEBUG)
 
-    @timer
     def findRange():
         items = [n for n in range(0, 5)]
         with F.cbugCheck(F.main):
