@@ -44,7 +44,7 @@ class MyLogger(logging.Logger):
             filelogger.addHandler(filehandler)
 
     def success(self, message):
-        self.info(Fore.GREEN + message)
+        self.info(Fore.GREEN + message + Fore.RESET)
 
     def spc_dbg(self, message, *args, **kwargs):
         if self.isEnabledFor(logging.SPC_DBG):
@@ -69,10 +69,10 @@ class MyLogger(logging.Logger):
         self.spc_dbg(Back.RED + Fore.BLACK + message + Back.RESET + Fore.RESET)
 
     def CDF(self, message):
-        self.debug(Fore.RED + message + Fore.RESET)
+        self.debug(Back.RED + Fore.BLACK + message + Back.RESET + Fore.RESET)
 
     def CDS(self, message):
-        self.cmn_dbg(Fore.GREEN + message + Fore.RESET)
+        self.cmn_dbg(Back.GREEN + Fore.LIGHTWHITE_EX + message + Back.RESET + Fore.RESET)
 
     def SIS(self, message):
         self.spc_dbg(Back.GREEN + Fore.LIGHTWHITE_EX + message + Back.RESET + Fore.RESET)
@@ -111,17 +111,29 @@ class CheckLog:
 
     @contextmanager
     @empty_logs
-    def bugCheck(self, logger, func_name=None, init=None, done=None, error=None, end=None):
+    def cbugCheck(self, logger, func_name=None, init=None, done=None, error=None, end=None):
         func_name = eval(self.LOC) if func_name is None else func_name
         try:
-            logger.spc_dbg(f'{func_name}: {init}')
+            logger.cmn_dbg(Fore.GREEN + f'{func_name}: {init}'+ Fore.RESET)
             yield func_name
             logger.CDS(f'{func_name}: {done}')
         except Exception as e:
             logger.CDF(f'{error}: {e}')
         finally:
-            logger.CDS(f'{func_name}: {end}')
+            logger.cmn_dbg(Fore.GREEN + f'{func_name}: {end}' + Fore.RESET)
 
+    @contextmanager
+    @empty_logs
+    def sbugCheck(self, logger, func_name=None, init=None, done=None, error=None, end=None):
+        func_name = eval(self.LOC) if func_name is None else func_name
+        try:
+            logger.spc_dbg(Fore.BLUE + f'{func_name}: {init}' + Fore.RESET)
+            yield func_name
+            logger.spc_dbg(Fore.GREEN + f'{func_name}: {done}' + Fore.RESET)
+        except Exception as e:
+            logger.SDF(f'{error}: {e}')
+        finally:
+            logger.spc_dbg(Fore.BLUE + f'{func_name}: {end}' + Fore.RESET)
 
 if __name__ == '__main__':
 
@@ -136,7 +148,7 @@ if __name__ == '__main__':
     log = Logger()
 
     def find(x, items):
-        with log.bugCheck(log.dataProc):
+        with log.sbugCheck(log.dataProc):
             for item in items:
                 if item == x:
                     indice = items.index(item)
@@ -144,7 +156,7 @@ if __name__ == '__main__':
             return items.pop(indice)
 
     items = [n for n in range(0, 5)]
-    with log.bugCheck(log.client):
+    with log.cbugCheck(log.client):
         for x in range(0, 6):
             result = find(x, items)
     log.main.SDS(f'FINISHED')
@@ -164,7 +176,7 @@ if __name__ == '__main__':
             self.display.setLevel(logging.SPC_DBG)
 
         def find(self, x, items):
-            with self.bugCheck(self.main):
+            with self.sbugCheck(self.main):
                 for item in items:
                     if item == x:
                         indice = items.index(item)
@@ -172,10 +184,11 @@ if __name__ == '__main__':
                 return items.pop(indice)
 
 
-    F= Finder()
+    F = Finder()
+    # F.main.setLevel(logging.DEBUG)
 
     items = [n for n in range(0, 5)]
-    with F.bugCheck(F.main):
+    with F.cbugCheck(F.main):
         for x in range(0, 6):
             result = F.find(x, items)
     F.main.SDS(f'FINISHED')
