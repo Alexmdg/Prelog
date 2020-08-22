@@ -3,6 +3,7 @@ from colorama import Fore, Back
 from contextlib import contextmanager
 import wrapt
 import inspect
+import time
 
 logging.addLevelName(8, "SPC_DBG")
 logging.SPC_DBG = logging.DEBUG - 2
@@ -94,6 +95,13 @@ def empty_logs(wrapped, instance, args, kwargs):
     end = "Closed: True" if not 'end' in kwargs else kwargs['end']
     return wrapped(*args, **kwargs, init=init, done=done, error=error, end=end)
 
+@wrapt.decorator
+def timer(wrapped, instance, args, kwargs):
+    a = time.time()
+    result = wrapped(*args, **kwargs)
+    b = time.time() - a
+    return result, b
+
 class CheckLog:
     def __init__(self, fmt=FORMATS['classic']):
         self.LOC = "f'{inspect.getouterframes(inspect.currentframe())[-1][-2]}'"
@@ -128,12 +136,26 @@ class CheckLog:
         func_name = eval(self.LOC) if func_name is None else func_name
         try:
             logger.spc_dbg(Fore.BLUE + f'{func_name}: {init}' + Fore.RESET)
-            yield func_name
+            yield
             logger.spc_dbg(Fore.GREEN + f'{func_name}: {done}' + Fore.RESET)
         except Exception as e:
             logger.SDF(f'{error}: {e}')
         finally:
             logger.spc_dbg(Fore.BLUE + f'{func_name}: {end}' + Fore.RESET)
+
+    @contextmanager
+    def timeCheck(self, func, *args, **kwargs):
+        try:
+            start = time.time()
+            result = func(*args, **kwargs)
+            duration = time.time() - start
+            yield result, duration
+        except:
+            pass
+        finally:
+            pass
+
+
 
 if __name__ == '__main__':
 
@@ -175,6 +197,7 @@ if __name__ == '__main__':
             self.main.setLevel(logging.SPC_DBG)
             self.display.setLevel(logging.SPC_DBG)
 
+        @timer
         def find(self, x, items):
             with self.sbugCheck(self.main):
                 for item in items:
@@ -187,13 +210,27 @@ if __name__ == '__main__':
     F = Finder()
     # F.main.setLevel(logging.DEBUG)
 
-    items = [n for n in range(0, 5)]
-    with F.cbugCheck(F.main):
-        for x in range(0, 6):
-            result = F.find(x, items)
-    F.main.SDS(f'FINISHED')
+    @timer
+    def findRange():
+        items = [n for n in range(0, 5)]
+        with F.cbugCheck(F.main):
+            for x in range(0, 6):
+                result = F.find(x, items)
+                # F.main.spc_dbg(f'{result[1]}')
+
+    result = findRange()
+
+    F.main.SDS(f'{result} FINISHED')
 
     items = [n for n in range(0, 5)]
     for x in range(0, 6):
         F.find(x, items)
     F.main.SDS(f'FINISHED')
+
+    items = [n for n in range(0, 5)]
+    results = []
+    for x in range(0, 6):
+        with F.timeCheck(F.find, x, items) as result:
+            results.append(result)
+    F.main.cmn_dbg(f'{[result for result in results]}')
+
