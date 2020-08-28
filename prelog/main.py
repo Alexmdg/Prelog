@@ -93,14 +93,6 @@ class MyLogger(logging.Logger):
     def CIS(self, message):
         self.cmn_dbg(Fore.GREEN + message + Fore.RESET)
 
-##          Decorator used to allow no arguments to be passed for several methods in CheckLog class         ##
-@wrapt.decorator
-def empty_logs(wrapped, instance, args, kwargs):
-    init = "Init: True" if not 'init' in kwargs else kwargs['init']
-    done = "Completed: True" if not 'done' in kwargs else kwargs['done']
-    error = "Completed: False" if not 'error' in kwargs else kwargs['error']
-    end = "Closed: True" if not 'end' in kwargs else kwargs['end']
-    return wrapped(*args, **kwargs, init=init, done=done, error=error, end=end)
 
 ##          Timer decorator to use directly in your code         ##
 @wrapt.decorator
@@ -124,35 +116,33 @@ class CheckLog:
 
     ##          Create a new logger that will be used with "self.'id'"          ##
     def create_logger(self, id, color, fmt=FORMATS['classic']):
-        setattr(CheckLog, id, MyLogger(__name__, fmt=color + id + fmt + Fore.RESET))
+        setattr(CheckLog, id, MyLogger(__name__, fmt=color + id.upper() + fmt + Fore.RESET))
 
     ##          A context manager at logging level 'common debug'           ##
     @contextmanager
-    @empty_logs
-    def cbugCheck(self, logger, func_name=None, init=None, done=None, error=None, end=None):
+    def cbugCheck(self, logger, func_name=None):
         func_name = eval(self.LOC) if func_name is None else func_name
         try:
-            logger.cmn_dbg(Fore.GREEN + f'{func_name}: {init}'+ Fore.RESET)
+            logger.cmn_dbg(Fore.GREEN + f'{func_name}: {self.init}'+ Fore.RESET)
             yield func_name
-            logger.CDS(f'{func_name}: {done}')
+            logger.CDS(f'{func_name}: {self.done}')
         except Exception as e:
-            logger.CDF(f'{error}: {e}')
+            logger.CDF(f'{self.error}: {e}')
         finally:
-            logger.cmn_dbg(Fore.GREEN + f'{func_name}: {end}' + Fore.RESET)
+            logger.cmn_dbg(Fore.GREEN + f'{func_name}: {self.end}' + Fore.RESET)
 
     ##          A context manager at logging level 'specific debug'           ##
     @contextmanager
-    @empty_logs
-    def sbugCheck(self, logger, func_name=None, init=None, done=None, error=None, end=None):
+    def sbugCheck(self, logger, func_name=None):
         func_name = eval(self.LOC) if func_name is None else func_name
         try:
-            logger.spc_dbg(Fore.BLUE + f'{func_name}: {init}' + Fore.RESET)
+            logger.spc_dbg(Fore.BLUE + f'{func_name}: {self.init}' + Fore.RESET)
             yield
-            logger.spc_dbg(Fore.GREEN + f'{func_name}: {done}' + Fore.RESET)
+            logger.spc_dbg(Fore.GREEN + f'{func_name}: {self.done}' + Fore.RESET)
         except Exception as e:
-            logger.SDF(f'{error}: {e}')
+            logger.SDF(f'{self.error}: {e}')
         finally:
-            logger.spc_dbg(Fore.BLUE + f'{func_name}: {end}' + Fore.RESET)
+            logger.spc_dbg(Fore.BLUE + f'{func_name}: {self.end}' + Fore.RESET)
 
     ##          A timercontext manager          ##
     @contextmanager
