@@ -1,4 +1,4 @@
 from setuptools import setup
 
 
-setup(name="prelog", version="0.31", packages=['prelog'])
+setup(name="prelog", version="1.00", packages=['prelog'])
