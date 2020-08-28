@@ -123,13 +123,13 @@ class CheckLog:
     def cbugCheck(self, logger, func_name=None):
         func_name = eval(self.LOC) if func_name is None else func_name
         try:
-            logger.cmn_dbg(Fore.GREEN + f'{func_name}: {self.init}'+ Fore.RESET)
+            logger.cmn_dbg(Fore.BLUE + f'{func_name}: {self.init}'+ Fore.RESET)
             yield func_name
             logger.CDS(f'{func_name}: {self.done}')
         except Exception as e:
             logger.CDF(f'{self.error}: {e}')
         finally:
-            logger.cmn_dbg(Fore.GREEN + f'{func_name}: {self.end}' + Fore.RESET)
+            logger.cmn_dbg(Fore.BLUE + f'{func_name}: {self.end}' + Fore.RESET)
 
     ##          A context manager at logging level 'specific debug'           ##
     @contextmanager
