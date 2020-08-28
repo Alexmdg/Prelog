@@ -1,2 +1,4 @@
-colorama
-wrapt
+wrapt~=1.12.1
+colorama~=0.4.3
+pytest~=6.0.1
+setuptools~=49.3.1

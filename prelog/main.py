@@ -15,12 +15,15 @@ logging.SPC_INFO = logging.INFO - 2
 logging.addLevelName(22, "CMN_INFO")
 logging.CMN_INFO = logging.INFO + 2
 
-LEVELS = {"1": logging.SPC_DBG,
-          "2": logging.DEBUG,
-          "3": logging.CMN_DBG,
-          "4": logging.SPC_INFO,
-          "5": logging.INFO,
-          "6": logging.CMN_INFO}
+LEVELS = {"1": logging.SPC_DBG,     #Specific Debug
+          "2": logging.DEBUG,       #Classic Debug
+          "3": logging.CMN_DBG,     #Common Debug
+          "4": logging.SPC_INFO,    #Specific Infos
+          "5": logging.INFO,        #Classic Infos
+          "6": logging.CMN_INFO,    #Common Infos
+          "7": logging.ERROR,       #Classic Error
+          "8": logging.CRITICAL,    #Classic Critical
+          }
 
 
 ##          Formats         ##
@@ -115,12 +118,12 @@ class CheckLog:
         self.end = "Closed: True"
 
     ##          Create a new logger that will be used with "self.'id'"          ##
-    def create_logger(self, id, color, fmt=FORMATS['classic']):
+    def create_logger(self, id, color=Fore.WHITE, fmt=FORMATS['classic']):
         setattr(CheckLog, id, MyLogger(__name__, fmt=color + id.upper() + fmt + Fore.RESET))
 
     ##          A context manager at logging level 'common debug'           ##
     @contextmanager
-    def cbugCheck(self, logger, func_name=None):
+    def bugCheck(self, logger, func_name=None):
         func_name = eval(self.LOC) if func_name is None else func_name
         try:
             logger.cmn_dbg(Fore.BLUE + f'{func_name}: {self.init}'+ Fore.RESET)
@@ -180,7 +183,7 @@ if __name__ == '__main__':
             return items.pop(indice)
 
     items = [n for n in range(0, 5)]
-    with log.cbugCheck(log.client):
+    with log.bugCheck(log.client):
         for x in range(0, 6):
             result = find(x, items)
     log.main.SDS(f'FINISHED')
@@ -190,8 +193,6 @@ if __name__ == '__main__':
         find(x, items)
     log.main.SDS(f'FINISHED')
 
-    from prelog.exemple import hello
-    hello('world')
 
     class Finder(CheckLog):
         def __init__(self):
@@ -201,7 +202,7 @@ if __name__ == '__main__':
 
         @timer
         def find(self, x, items):
-            with self.sbugCheck(self.main):
+            with self.bugCheck(self.main, 'find'):
                 for item in items:
                     if item == x:
                         indice = items.index(item)
@@ -214,7 +215,7 @@ if __name__ == '__main__':
 
     def findRange():
         items = [n for n in range(0, 5)]
-        with F.cbugCheck(F.main):
+        with F.bugCheck(F.main):
             for x in range(0, 6):
                 result = F.find(x, items)
                 # F.main.spc_dbg(f'{result[1]}')
