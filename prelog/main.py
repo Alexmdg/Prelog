@@ -123,7 +123,7 @@ class CheckLog:
 
     ##          A context manager at logging level 'common debug'           ##
     @contextmanager
-    def bugCheck(self, logger, func_name=None):
+    def cbugCheck(self, logger, func_name=None):
         func_name = eval(self.LOC) if func_name is None else func_name
         try:
             logger.cmn_dbg(Fore.BLUE + f'{func_name}: {self.init}'+ Fore.RESET)
@@ -147,7 +147,7 @@ class CheckLog:
         finally:
             logger.spc_dbg(Fore.BLUE + f'{func_name}: {self.end}' + Fore.RESET)
 
-    ##          A timercontext manager          ##
+    ##          A timer context manager          ##
     @contextmanager
     def timeCheck(self, func, *args, **kwargs):
         try:
@@ -159,7 +159,6 @@ class CheckLog:
             pass
         finally:
             pass
-
 
 
 if __name__ == '__main__':
@@ -183,7 +182,7 @@ if __name__ == '__main__':
             return items.pop(indice)
 
     items = [n for n in range(0, 5)]
-    with log.bugCheck(log.client):
+    with log.sbugCheck(log.client):
         for x in range(0, 6):
             result = find(x, items)
     log.main.SDS(f'FINISHED')
@@ -202,7 +201,7 @@ if __name__ == '__main__':
 
         @timer
         def find(self, x, items):
-            with self.bugCheck(self.main, 'find'):
+            with self.cbugCheck(self.main, 'find'):
                 for item in items:
                     if item == x:
                         indice = items.index(item)
@@ -211,23 +210,16 @@ if __name__ == '__main__':
 
 
     F = Finder()
-    # F.main.setLevel(logging.DEBUG)
-
-    def findRange():
-        items = [n for n in range(0, 5)]
-        with F.bugCheck(F.main):
-            for x in range(0, 6):
-                result = F.find(x, items)
-                # F.main.spc_dbg(f'{result[1]}')
-
-    result = findRange()
 
     F.main.SDS(f'{result} FINISHED')
 
     items = [n for n in range(0, 5)]
-    for x in range(0, 6):
-        F.find(x, items)
-    F.main.SDS(f'FINISHED')
+    with F.sbugCheck(F.main):
+        results = []
+        for x in range(0, 6):
+            results.append(F.find(x, items)[1])
+        duration = sum(results)
+        F.main.SDS(f'FINISHED in {duration}')
 
     items = [n for n in range(0, 5)]
     results = []

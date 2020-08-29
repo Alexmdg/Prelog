@@ -5,6 +5,7 @@ It contains :
 
 * Custom levels
 * Custom Formats
+* a timer decorator
 * A Logger class, allowing to log in color
 * The CheckLog class to manage loggers
 
@@ -42,6 +43,8 @@ FORMATS = {
 
 ###### Basic Usage
 
+You can find these examples at the end of main.py
+
 ```python
 import prelog as pog
 
@@ -57,7 +60,7 @@ log.results.setLevel(pog.LEVELS['1'])
 
 #Log events, using context manager or simple log message :
 def find(x, items):
-    with log.bugCheck(log.results, 'find'):
+    with log.cbugCheck(log.results, 'find'):
         for item in items:
             if item == x:
                 indice = items.index(item)
@@ -65,38 +68,48 @@ def find(x, items):
         return items.pop(indice)
 
 items = [n for n in range(0, 5)]
-with log.bugCheck(log.main):
+with log.sbugCheck(log.main):
     for x in range(0, 6):
         result = find(x, items)
 log.main.SDS(f'FINISHED')
-```
 
-You can create one instance of CHeckLog in a basic file and import it
-where you need to use it, so your log levels for each logger will be the same
-evrywhere.
+#Tou can also use the time context manager :
+items = [n for n in range(0, 5)]
+results = []
+for x in range(0, 6):
+    with log.timeCheck(find, x, items) as result:
+        results.append(result)
+log.main.cmn_dbg(f'{[result for result in results]}')
 
-Or you can initiate new instances of CheckLog on each module to change levels
-depending on the file you're working on.
+#You can create one instance of CheckLog in a basic file and import it
+#where you need to use it, so your log levels for each logger will be the same
+#evrywhere.
 
-Or you can also have some class inheriting CheckLog:
+#Or you can initiate new instances of CheckLog on each module to change levels
+#depending on the file you're working on.
 
-```python
-class Finder(CheckLog):
+#Or you can also have some class inheriting CheckLog:
+class Finder(pog.CheckLog):
     def __init__(self):
         super().__init__(fmt=pog.FORMATS['locate'])
         self.main.setLevel(pog.LEVELS['1'])
         self.display.setLevel(pog.LEVELS['1'])
 
-    @timer
+#You can also add the timer decorator, that will return a tuple
+#with the result of the function and the time of execution 
+    @pog.timer
     def find(self, x, items):
-        with self.sbugCheck(self.main):
+        with self.cbugCheck(self.main):
             for item in items:
                 if item == x:
                     indice = items.index(item)
                     F.dataIO.cmn_dbg(f'{str(item)} = {type(item)}')
             return items.pop(indice)
 
-
 F = Finder()
+items = [n for n in range(0, 5)]
+for x in range(0, 6):
+    F.find(x, items)
+F.main.SDS(f'FINISHED')
 ```
 
